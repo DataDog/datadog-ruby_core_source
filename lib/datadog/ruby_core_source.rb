@@ -1,7 +1,7 @@
-require 'debase/ruby_core_source/version'
+require 'datadog/ruby_core_source/version'
 require 'rbconfig'
 
-module Debase
+module Datadog
   module RubyCoreSource
     REVISION_MAP = {
         # Add pre-release version here since they do not have patchlevel to refer to.
@@ -76,7 +76,7 @@ module Debase
       warn <<-STR
 **************************************************************************
 No source for #{ruby_version} (revision #{RUBY_REVISION}) provided with
-debase-ruby_core_source gem. Falling back to #{fallback_version}.
+datadog-ruby_core_source gem. Falling back to #{fallback_version}.
 **************************************************************************
 STR
     end
@@ -85,7 +85,7 @@ STR
       abort <<-STR
 Makefile creation failed
 **************************************************************************
-No source for #{ruby_version} provided with debase-ruby_core_source gem.
+No source for #{ruby_version} provided with datadog-ruby_core_source gem.
 **************************************************************************
 STR
     end

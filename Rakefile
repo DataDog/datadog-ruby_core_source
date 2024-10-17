@@ -7,7 +7,7 @@ require 'bundler'
 Bundler::GemHelper.install_tasks
 
 def get_dest_dir(ruby_dir, version, tempdir)
-  dest_dir = File.dirname(__FILE__) + "/lib/debase/ruby_core_source/#{ruby_dir}"
+  dest_dir = File.dirname(__FILE__) + "/lib/datadog/ruby_core_source/#{ruby_dir}"
   return dest_dir if version.include?('-p')
 
   patchlevel = ENV['PATCHLEVEL']
@@ -71,4 +71,3 @@ task :add_source do
     end
   end
 end
-
