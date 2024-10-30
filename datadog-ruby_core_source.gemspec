@@ -18,4 +18,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency "archive-tar-minitar", ">= 0.5.2"
   s.add_development_dependency 'rake', '>= 0.9.2'
   s.add_development_dependency 'minitar-cli'
+  s.extensions = ['ext/shave/extconf.rb']
 end
