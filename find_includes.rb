@@ -1,10 +1,42 @@
 #!/usr/bin/env ruby
 
-# @ivoanjo: I've used ChatGPT to generate this quick-and-dirty tool. It can be used to identify recursively which
-# ruby headers include which headers, and which are not used. E.g. by using
+# @ivoanjo: I've used ChatGPT to generate this quick-and-dirty tool.
+# This was added in https://github.com/DataDog/datadog-ruby_core_source/pull/5 . The intent of this script is to do
+# the following: Starting from the internal VM headers used by the profiler in dd-trace-rb, identify which other
+# headers are needed by those headers, and keep those, but delete everything else.
+#
+# To invoke it:
 # `find_includes.rb vm_core.h iseq.h ractor_core.h` we get a rough list of headers that are not needed by the
 # datadog gem. Always remember to validate the result -- this tool isn't perfect (for instance it doesn't detect that
 # thread_pthread.h is in use).
+#
+# This makes this gem very tailored to the needs of dd-trace-rb. In the future this may change.
+# This is purely a size-based optimization; we delete any file that the profiler doesn't need right now; it's OK to
+# skip using this tool and ship the full set of headers (they're just not needed).
+#
+# ---
+#
+# 1. What internal VM headers should you start from?
+# Currently this script should be used as `find_includes.rb vm_core.h iseq.h ractor_core.h`. These headers are the
+# ones included in
+# https://github.com/DataDog/dd-trace-rb/blob/master/ext/datadog_profiling_native_extension/private_vm_api_access.c .
+# By design, this is the only file in the dd-trace-rb codebase that includes internal VM headers and thus needs to be
+# checked.
+#
+# 2. What's up with the warning about `thread_pthread.h` above? In modern Rubies, that header gets included via
+# `#include THREAD_IMPL_H`, with this `THREAD_IMPL_H` being provided by the auto-generated "ruby/config.h" file.
+# Thus, this detection fails for this file.
+#
+# 3. How to validate that there are no missing headers? To validate a set of headers is enough, build dd-trace-rb
+# with those headers on linux/docker (`bundle exec rake clean compile`). If it passes, it's enough!
+# (If you delete `thread_pthread.h` you'll get a compilation error)
+#
+# 4. How to apply this optimization to new sets of headers in the future:
+#   a. Import the new set of headers
+#   b. Run `find_includes.rb` on the specific headers folder being imported (each one, if multiple)
+#   c. Delete the resulting files (but leave `thread_pthread.h`)
+#   d. Check that the profiler still builds on those Ruby versions (using CI, or locally in docker)
+#   e. If any issues arise, leave all the headers in place! We can perform this optimization as a separate step
 
 require 'set'
 require 'pry'
