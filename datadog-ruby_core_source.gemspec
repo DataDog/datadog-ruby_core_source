@@ -5,7 +5,7 @@ require File.dirname(__FILE__) + "/lib/datadog/ruby_core_source/version"
 Gem::Specification.new do |s|
   s.name = "datadog-ruby_core_source"
   s.version = Datadog::RubyCoreSource::VERSION
-  s.authors = ["Mark Moseley", "Gabriel Horner", "JetBrains RubyMine Team"]
+  s.authors = ["Mark Moseley", "Gabriel Horner", "JetBrains RubyMine Team", "Datadog, Inc."]
   s.email = "dev@datadoghq.com"
   s.homepage = "https://github.com/DataDog/datadog-ruby_core_source"
   s.summary = %q{Provide Ruby core source files}
@@ -15,6 +15,13 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.0.0'
   s.extra_rdoc_files = [ "README.md"]
   s.files = `git ls-files`.split("\n")
+    .reject { |fn| fn.include?('CONTRIBUTING.md') }
+    .reject { |fn| fn.include?('find_includes.rb') }
+    .reject { |fn| fn.include?('CHANGELOG.md') }
+    .reject { |fn| fn.include?('Gemfile') }
+    .reject { |fn| fn.include?('Rakefile') }
+    .reject { |fn| fn.include?('.github/') }
+    .reject { |fn| fn.include?('.gitignore') }
   s.add_development_dependency "archive-tar-minitar", ">= 0.5.2"
   s.add_development_dependency 'rake', '>= 0.9.2'
   s.add_development_dependency 'minitar-cli'
