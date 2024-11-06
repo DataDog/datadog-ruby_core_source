@@ -1,0 +1,74 @@
+name: Test dd-trace-rb compilation
+
+on:
+  push:
+  workflow_call:
+
+jobs:
+  test-compilation:
+    runs-on: ubuntu-latest
+    name: "Ruby:${{ matrix.ruby_version }} expects ${{ matrix.expected_exit_code == 1 && '❌' || '✅' }} for ${{ matrix.ref }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Success cases (github.sha)
+          - { ruby_version: '3.4', ref: '${{ github.sha }}', expected_exit_code: 0 }
+          - { ruby_version: '3.3', ref: '${{ github.sha }}', expected_exit_code: 0 }
+          - { ruby_version: '3.2', ref: '${{ github.sha }}', expected_exit_code: 0 }
+          - { ruby_version: '3.1', ref: '${{ github.sha }}', expected_exit_code: 0 }
+          - { ruby_version: '3.0', ref: '${{ github.sha }}', expected_exit_code: 0 }
+          - { ruby_version: '2.7', ref: '${{ github.sha }}', expected_exit_code: 0 }
+          - { ruby_version: '2.6', ref: '${{ github.sha }}', expected_exit_code: 0 }
+          - { ruby_version: '2.5', ref: '${{ github.sha }}', expected_exit_code: 0 }
+
+          # Success cases (test-negative/missing-versions)
+          - { ruby_version: '3.2', ref: 'test-negative/missing-versions', expected_exit_code: 0 }
+          - { ruby_version: '3.1', ref: 'test-negative/missing-versions', expected_exit_code: 0 }
+          - { ruby_version: '3.0', ref: 'test-negative/missing-versions', expected_exit_code: 0 }
+          - { ruby_version: '2.7', ref: 'test-negative/missing-versions', expected_exit_code: 0 }
+          - { ruby_version: '2.6', ref: 'test-negative/missing-versions', expected_exit_code: 0 }
+
+          # Failure cases (test-negative/missing-versions)
+          - { ruby_version: '3.4', ref: test-negative/missing-versions, expected_exit_code: 1 }
+          - { ruby_version: '3.3', ref: test-negative/missing-versions, expected_exit_code: 1 }
+          - { ruby_version: '2.5', ref: test-negative/missing-versions, expected_exit_code: 1 }
+
+    container:
+      image: ghcr.io/datadog/images-rb/engines/ruby:${{ matrix.ruby_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Datadog/dd-trace-rb
+          path: dd-trace-rb
+      - name: Add datadog-ruby_core_source
+        working-directory: ./dd-trace-rb
+        run: |
+          bundle add datadog-ruby_core_source --github ${{ github.repository }} --ref ${{ matrix.ref }}
+          bundle info datadog-ruby_core_source
+      - name: Compile and validate exit code
+        working-directory: ./dd-trace-rb
+        run: |
+          set +e  # Disable immediate exit on error
+          bundle exec rake compile
+          actual_exit_code=$?
+          set -e  # Re-enable exit on error
+
+          echo "Actual exit code: $actual_exit_code"
+          echo "Expected exit code: ${{ matrix.expected_exit_code }}"
+
+          if [ ${{ matrix.expected_exit_code }} -eq 0 ]; then
+            if [ $actual_exit_code -eq 0 ]; then
+              echo "✅ Got expected success"
+            else
+              echo "❌ Expected success but got failure (exit code $actual_exit_code)"
+              exit 1
+            fi
+          else
+            if [ $actual_exit_code -gt 0 ]; then
+              echo "✅ Got expected failure with exit code $actual_exit_code"
+            else
+              echo "❌ Expected failure but got success (exit code 0)"
+              exit 1
+            fi
+          fi
