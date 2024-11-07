@@ -7,36 +7,39 @@ on:
 jobs:
   test-compilation:
     runs-on: ubuntu-latest
-    name: "Ruby:${{ matrix.ruby_version }} expects ${{ matrix.expected_exit_code == 1 && '❌' || '✅' }} for ${{ matrix.ref }}"
+    name: "Ruby:${{ matrix.ruby_version }} expects ${{ matrix.expected_exit_code == 1 && '❌' || '✅' }} ${{ matrix.corruption && 'with' || 'without' }} corruption"
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Success cases (github.sha)
-          - { ruby_version: '3.4', ref: '${{ github.sha }}', expected_exit_code: 0 }
-          - { ruby_version: '3.3', ref: '${{ github.sha }}', expected_exit_code: 0 }
-          - { ruby_version: '3.2', ref: '${{ github.sha }}', expected_exit_code: 0 }
-          - { ruby_version: '3.1', ref: '${{ github.sha }}', expected_exit_code: 0 }
-          - { ruby_version: '3.0', ref: '${{ github.sha }}', expected_exit_code: 0 }
-          - { ruby_version: '2.7', ref: '${{ github.sha }}', expected_exit_code: 0 }
-          - { ruby_version: '2.6', ref: '${{ github.sha }}', expected_exit_code: 0 }
-          - { ruby_version: '2.5', ref: '${{ github.sha }}', expected_exit_code: 0 }
+          - { ruby_version: '3.4', corruption: false, expected_exit_code: 0 } # Used by `dd-trace-rb` for compilation
+          - { ruby_version: '3.3', corruption: false, expected_exit_code: 0 } # Used by `dd-trace-rb` for compilation
+          - { ruby_version: '3.2', corruption: false, expected_exit_code: 0 }
+          - { ruby_version: '3.1', corruption: false, expected_exit_code: 0 }
+          - { ruby_version: '3.0', corruption: false, expected_exit_code: 0 }
+          - { ruby_version: '2.7', corruption: false, expected_exit_code: 0 }
+          - { ruby_version: '2.6', corruption: false, expected_exit_code: 0 }
+          - { ruby_version: '2.5', corruption: false, expected_exit_code: 0 } # Used by `dd-trace-rb` for compilation
 
-          # Success cases (test-negative/missing-versions)
-          - { ruby_version: '3.2', ref: 'test-negative/missing-versions', expected_exit_code: 0 }
-          - { ruby_version: '3.1', ref: 'test-negative/missing-versions', expected_exit_code: 0 }
-          - { ruby_version: '3.0', ref: 'test-negative/missing-versions', expected_exit_code: 0 }
-          - { ruby_version: '2.7', ref: 'test-negative/missing-versions', expected_exit_code: 0 }
-          - { ruby_version: '2.6', ref: 'test-negative/missing-versions', expected_exit_code: 0 }
-
-          # Failure cases (test-negative/missing-versions)
-          - { ruby_version: '3.4', ref: test-negative/missing-versions, expected_exit_code: 1 }
-          - { ruby_version: '3.3', ref: test-negative/missing-versions, expected_exit_code: 1 }
-          - { ruby_version: '2.5', ref: test-negative/missing-versions, expected_exit_code: 1 }
+          # Corruption tests
+          - { ruby_version: '3.4', corruption: true,  expected_exit_code: 1 } # Used by `dd-trace-rb` for compilation
+          - { ruby_version: '3.3', corruption: true,  expected_exit_code: 1 } # Used by `dd-trace-rb` for compilation
+          - { ruby_version: '3.2', corruption: true,  expected_exit_code: 0 }
+          - { ruby_version: '3.1', corruption: true,  expected_exit_code: 0 }
+          - { ruby_version: '3.0', corruption: true,  expected_exit_code: 0 }
+          - { ruby_version: '2.7', corruption: true,  expected_exit_code: 0 }
+          - { ruby_version: '2.6', corruption: true,  expected_exit_code: 0 }
+          - { ruby_version: '2.5', corruption: true,  expected_exit_code: 1 } # Used by `dd-trace-rb` for compilation
 
     container:
       image: ghcr.io/datadog/images-rb/engines/ruby:${{ matrix.ruby_version }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: datadog-ruby_core_source
+      - if: ${{ matrix.corruption }}
+        working-directory: ./datadog-ruby_core_source
+        run: rm -v  lib/datadog/ruby_core_source/*/iseq.h
       - uses: actions/checkout@v4
         with:
           repository: Datadog/dd-trace-rb
@@ -44,7 +47,7 @@ jobs:
       - name: Add datadog-ruby_core_source
         working-directory: ./dd-trace-rb
         run: |
-          bundle add datadog-ruby_core_source --github ${{ github.repository }} --ref ${{ matrix.ref }}
+          bundle add datadog-ruby_core_source --path=../datadog-ruby_core_source
           bundle info datadog-ruby_core_source
       - name: Compile and validate exit code
         working-directory: ./dd-trace-rb
