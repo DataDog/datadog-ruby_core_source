@@ -1,0 +1,77 @@
+name: Test dd-trace-rb compilation
+
+on:
+  push:
+  workflow_call:
+
+jobs:
+  test-compilation:
+    runs-on: ubuntu-latest
+    name: "Ruby:${{ matrix.ruby_version }} expects ${{ matrix.expected_exit_code == 1 && '❌' || '✅' }} ${{ matrix.corruption && 'with' || 'without' }} corruption"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { ruby_version: '3.4', corruption: false, expected_exit_code: 0 } # Used by `dd-trace-rb` for compilation
+          - { ruby_version: '3.3', corruption: false, expected_exit_code: 0 } # Used by `dd-trace-rb` for compilation
+          - { ruby_version: '3.2', corruption: false, expected_exit_code: 0 }
+          - { ruby_version: '3.1', corruption: false, expected_exit_code: 0 }
+          - { ruby_version: '3.0', corruption: false, expected_exit_code: 0 }
+          - { ruby_version: '2.7', corruption: false, expected_exit_code: 0 }
+          - { ruby_version: '2.6', corruption: false, expected_exit_code: 0 }
+          - { ruby_version: '2.5', corruption: false, expected_exit_code: 0 } # Used by `dd-trace-rb` for compilation
+
+          # Corruption tests
+          - { ruby_version: '3.4', corruption: true,  expected_exit_code: 1 } # Used by `dd-trace-rb` for compilation
+          - { ruby_version: '3.3', corruption: true,  expected_exit_code: 1 } # Used by `dd-trace-rb` for compilation
+          - { ruby_version: '3.2', corruption: true,  expected_exit_code: 0 }
+          - { ruby_version: '3.1', corruption: true,  expected_exit_code: 0 }
+          - { ruby_version: '3.0', corruption: true,  expected_exit_code: 0 }
+          - { ruby_version: '2.7', corruption: true,  expected_exit_code: 0 }
+          - { ruby_version: '2.6', corruption: true,  expected_exit_code: 0 }
+          - { ruby_version: '2.5', corruption: true,  expected_exit_code: 1 } # Used by `dd-trace-rb` for compilation
+
+    container:
+      image: ghcr.io/datadog/images-rb/engines/ruby:${{ matrix.ruby_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: datadog-ruby_core_source
+      - if: ${{ matrix.corruption }}
+        working-directory: ./datadog-ruby_core_source
+        run: rm -v  lib/datadog/ruby_core_source/*/iseq.h
+      - uses: actions/checkout@v4
+        with:
+          repository: Datadog/dd-trace-rb
+          path: dd-trace-rb
+      - name: Add datadog-ruby_core_source
+        working-directory: ./dd-trace-rb
+        run: |
+          bundle add datadog-ruby_core_source --path=../datadog-ruby_core_source
+          bundle info datadog-ruby_core_source
+      - name: Compile and validate exit code
+        working-directory: ./dd-trace-rb
+        run: |
+          set +e  # Disable immediate exit on error
+          bundle exec rake compile
+          actual_exit_code=$?
+          set -e  # Re-enable exit on error
+
+          echo "Actual exit code: $actual_exit_code"
+          echo "Expected exit code: ${{ matrix.expected_exit_code }}"
+
+          if [ ${{ matrix.expected_exit_code }} -eq 0 ]; then
+            if [ $actual_exit_code -eq 0 ]; then
+              echo "✅ Got expected success"
+            else
+              echo "❌ Expected success but got failure (exit code $actual_exit_code)"
+              exit 1
+            fi
+          else
+            if [ $actual_exit_code -gt 0 ]; then
+              echo "✅ Got expected failure with exit code $actual_exit_code"
+            else
+              echo "❌ Expected failure but got success (exit code 0)"
+              exit 1
+            fi
+          fi

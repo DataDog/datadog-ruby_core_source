@@ -3,7 +3,12 @@ name: Publish Gem
 on: workflow_dispatch
 
 jobs:
+  test:
+    uses: ./.github/workflows/test-compilation.yml
+
   publish:
+    needs:
+      - test
     runs-on: ubuntu-latest
     permissions:
       contents: write
