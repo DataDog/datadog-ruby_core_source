@@ -2,4 +2,6 @@ source "https://rubygems.org"
 
 gemspec
 
-gem 'pry'
+group :development, optional: true do
+  gem 'pry'
+end
