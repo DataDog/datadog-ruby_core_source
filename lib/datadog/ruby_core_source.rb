@@ -18,7 +18,7 @@ module Datadog
       end
 
       ruby_dir = if RUBY_PATCHLEVEL < 0
-        REVISION_MAP[RUBY_REVISION] or "ruby-#{RUBY_VERSION}"
+        extract_beta_ruby_version
       else
         "ruby-#{RUBY_VERSION}-p#{RUBY_PATCHLEVEL}"
       end
@@ -36,6 +36,7 @@ module Datadog
 
       # Look for sources that ship with gem
       dest_dir = deduce_packaged_source_dir(ruby_dir)
+      $stderr.puts "Using datadog-ruby_core_source headers from #{dest_dir}"
       no_source_abort(ruby_dir) unless File.directory?(dest_dir)
 
       with_cppflags("-I" + dest_dir) {
@@ -88,6 +89,18 @@ Makefile creation failed
 No source for #{ruby_version} provided with datadog-ruby_core_source gem.
 **************************************************************************
 STR
+    end
+
+    def self.extract_beta_ruby_version
+      # Example Ruby description:
+      # ruby 3.4.0preview2 (2024-10-07 master 32c733f57b) +PRISM [x86_64-linux]
+      beta_suffix = RUBY_DESCRIPTION.split[1].sub(RUBY_VERSION, "")
+
+      if beta_suffix.start_with?("preview", "rc")
+        "ruby-#{RUBY_VERSION}-#{beta_suffix}"
+      else # Don't touch it
+        "ruby-#{RUBY_VERSION}"
+      end
     end
   end
 end
