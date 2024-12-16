@@ -15,9 +15,7 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.0.0'
   s.extra_rdoc_files = [ "README.md"]
   s.files = `git ls-files`.split("\n")
-    .reject { |fn| fn.include?('CONTRIBUTING.md') }
     .reject { |fn| fn.include?('find_includes.rb') }
-    .reject { |fn| fn.include?('CHANGELOG.md') }
     .reject { |fn| fn.include?('Gemfile') }
     .reject { |fn| fn.include?('Rakefile') }
     .reject { |fn| fn.include?('.github/') }
