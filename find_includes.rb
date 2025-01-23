@@ -39,7 +39,6 @@
 #   e. If any issues arise, leave all the headers in place! We can perform this optimization as a separate step
 
 require 'set'
-require 'pry'
 
 # Function to extract included headers from a file
 def extract_includes(file_path)
