@@ -1,3 +1,8 @@
+## [3.4.0] - 2025-01-27
+
+* Removed 3.4.0-preview2, 3.4.0-rc1 headers
+* Add 3.4.0 headers
+
 ## [3.3.7] - 2024-12-13
 
 * Remove headers and files not used by dd-trace-rb
