@@ -1,3 +1,7 @@
+## [3.4.1] - 2025-04-23
+
+* Add 3.5.0-preview1 headers
+
 ## [3.4.0] - 2025-01-27
 
 * Removed 3.4.0-preview2, 3.4.0-rc1 headers
