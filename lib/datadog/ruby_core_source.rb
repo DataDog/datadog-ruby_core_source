@@ -35,7 +35,7 @@ module Datadog
       end
 
       # Look for sources that ship with gem
-      dest_dir = deduce_packaged_source_dir(ruby_dir)
+      dest_dir = ENV["DATADOG_RUBY_HEADERS_OVERRIDE"] || deduce_packaged_source_dir(ruby_dir)
       $stderr.puts "Using datadog-ruby_core_source headers from #{dest_dir}"
       no_source_abort(ruby_dir) unless File.directory?(dest_dir)
 
