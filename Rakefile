@@ -37,7 +37,7 @@ Add ruby headers under lib for a given VERSION and (optional) PATCHLEVEL,
 DESCR
 task :add_source do
   version = ENV['VERSION'] or abort "Need a $VERSION"
-  ruby_dir = "ruby-#{version}"
+  ruby_dir = ENV['RUBY_DIR_OVERRIDE'] || "ruby-#{version}"
 
   if ENV['TGZ_FILE_NAME']
     temp = ENV['TGZ_FILE_NAME']
