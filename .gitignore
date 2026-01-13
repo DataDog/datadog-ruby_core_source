@@ -5,3 +5,4 @@ pkg
 .bundle
 .idea/
 !.idea/vcs.xml
+spec/examples.txt
