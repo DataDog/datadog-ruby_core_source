@@ -30,7 +30,7 @@ RSpec.describe Datadog::RubyCoreSource do
     end
 
     context 'when exact match does not exist' do
-      context 'with a patch version upgrade' do
+      context 'with a patch version upgrade and there are no preview headers' do
         let(:ruby_version) { '3.4.1' }
         let(:ruby_dir) { 'ruby-3.4.1-p0' }
 
@@ -43,15 +43,28 @@ RSpec.describe Datadog::RubyCoreSource do
         end
       end
 
+      context 'with a patch version upgrade and there are preview headers' do
+        let(:ruby_version) { '4.0.1' }
+        let(:ruby_dir) { 'ruby-4.0.1-p0' }
+
+        it 'falls back to the closest older version' do
+          expect(described_class).to receive(:fallback_source_warning).with(ruby_dir, 'ruby-4.0.0-p0')
+
+          result = described_class.deduce_packaged_source_dir(ruby_dir)
+          expect(result).to end_with('/ruby-4.0.0-p0')
+          expect(File.directory?(result)).to be true
+        end
+      end
+
       context 'with a preview version' do
         let(:ruby_version) { '4.0.0' } # Important: "preview" label doesn't show up on RUBY_VERSION
         let(:ruby_dir) { 'ruby-4.0.0-preview3' }
 
-        it 'falls back to the previous preview version' do
-          expect(described_class).to receive(:fallback_source_warning).with(ruby_dir, 'ruby-4.0.0-preview2')
+        it 'falls back to the stable version' do
+          expect(described_class).to receive(:fallback_source_warning).with(ruby_dir, 'ruby-4.0.0-p0')
 
           result = described_class.deduce_packaged_source_dir(ruby_dir)
-          expect(result).to end_with('/ruby-4.0.0-preview2')
+          expect(result).to end_with('/ruby-4.0.0-p0')
           expect(File.directory?(result)).to be true
         end
       end
@@ -60,8 +73,8 @@ RSpec.describe Datadog::RubyCoreSource do
 
   describe '.ruby_source_dir_version' do
      it 'parses stable versions correctly' do
-       expect(described_class.ruby_source_dir_version('ruby-2.7.0-p0')).to eq(Gem::Version.new('2.7.0.p0'))
-       expect(described_class.ruby_source_dir_version('ruby-3.4.1-p0')).to eq(Gem::Version.new('3.4.1.p0'))
+       expect(described_class.ruby_source_dir_version('ruby-2.7.0-p0')).to eq(Gem::Version.new('2.7.0'))
+       expect(described_class.ruby_source_dir_version('ruby-3.4.1-p0')).to eq(Gem::Version.new('3.4.1'))
      end
 
      it 'parses preview/rc versions correctly' do

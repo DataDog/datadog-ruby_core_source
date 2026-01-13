@@ -70,7 +70,14 @@ module Datadog
 
     def self.ruby_source_dir_version(dir)
       match = /ruby-([0-9\.]+)-((p|rc|preview)[0-9]+)\z/.match(dir)
-      Gem::Version.new("#{match[1]}.#{match[2]}")
+
+      # Strip the `pN` suffix if it's a stable version; this ensures that it's treated correctly by the version sorting,
+      # otherwise for instance `4.0.0.preview2` > `4.0.0.p0` as far as `Gem::Version is concerned`
+      if match[2].match?(/p[0-9]+/)
+        Gem::Version.new("#{match[1]}")
+      else
+        Gem::Version.new("#{match[1]}.#{match[2]}")
+      end
     end
 
     def self.fallback_source_warning(ruby_version, fallback_version)
