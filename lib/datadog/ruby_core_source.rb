@@ -48,8 +48,8 @@ module Datadog
       return false
     end
 
-    def self.deduce_packaged_source_dir(ruby_dir)
-      prefix = File.dirname(__FILE__) + '/ruby_core_source/'
+    def self.deduce_packaged_source_dir(ruby_dir, relative_to: File.dirname(__FILE__))
+      prefix = relative_to + '/ruby_core_source/'
       expected_directory = prefix + ruby_dir
       if (RUBY_REVISION.is_a? String or RUBY_REVISION > 0) and File.directory?(expected_directory)
         expected_directory
