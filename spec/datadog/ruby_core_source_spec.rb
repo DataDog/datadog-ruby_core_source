@@ -1,5 +1,7 @@
 require 'spec_helper'
 require 'datadog/ruby_core_source'
+require 'fileutils'
+require 'tmpdir'
 
 RSpec.describe Datadog::RubyCoreSource do
   describe '.deduce_packaged_source_dir' do
@@ -22,8 +24,20 @@ RSpec.describe Datadog::RubyCoreSource do
       let(:ruby_version) { '4.0.0' } # Important: "preview" label doesn't show up on RUBY_VERSION
       let(:ruby_dir) { 'ruby-4.0.0-preview2' }
 
+      # We no longer ship preview headers for Ruby 4 but let's pretend they're still around so we can test the code in
+      # a more realistic manner
+      before do
+        @temp_dir_with_preview = Dir.mktmpdir('ruby-core-source-spec-')
+        FileUtils.cp_r(File.expand_path('../../lib/datadog/ruby_core_source', __dir__), @temp_dir_with_preview)
+        FileUtils.cp_r("#{@temp_dir_with_preview}/ruby_core_source/ruby-4.0.0-p0", "#{@temp_dir_with_preview}/ruby_core_source/ruby-4.0.0-preview2")
+      end
+
+      after do
+        FileUtils.remove_entry(@temp_dir_with_preview)
+      end
+
       it 'returns the exact match directory' do
-        result = described_class.deduce_packaged_source_dir(ruby_dir)
+        result = described_class.deduce_packaged_source_dir(ruby_dir, relative_to: @temp_dir_with_preview)
         expect(result).to end_with('/ruby-4.0.0-preview2')
         expect(File.directory?(result)).to be true
       end
