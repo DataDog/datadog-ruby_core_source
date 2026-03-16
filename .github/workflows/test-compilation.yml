@@ -39,13 +39,13 @@ jobs:
     container:
       image: ghcr.io/datadog/images-rb/engines/ruby:${{ matrix.ruby_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           path: datadog-ruby_core_source
       - if: ${{ matrix.corruption }}
         working-directory: ./datadog-ruby_core_source
         run: rm -v  lib/datadog/ruby_core_source/*/iseq.h
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           repository: Datadog/dd-trace-rb
           path: dd-trace-rb
