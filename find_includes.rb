@@ -47,6 +47,7 @@ KNOWN_MISSING = %w[
   ruby/internal/config.h
   wasm/setjmp.h
   prism_xallocator.h
+  missing/stdbool.h
 ].to_set
 
 # Function to extract included headers from a file
