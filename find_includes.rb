@@ -43,28 +43,40 @@
 
 require 'set'
 
+KNOWN_MISSING = %w[
+  ruby/internal/config.h
+  wasm/setjmp.h
+  prism_xallocator.h
+].to_set
+
 # Function to extract included headers from a file
 def extract_includes(file_path)
   includes = []
 
   File.foreach(file_path) do |line|
-    # Regex to match #include "header.h" or #include <header.h>
-    if line =~ /^\s*#\s*include\s+["<](.*?)[">]/
-      includes << $1
+    # Regex to match `#include "header.h"`.
+    # `#include <ruby/header.h>` or `#include <stddef.h>` are public headers, so we don't match them.
+    if line =~ /^ \s* \# \s* include \s+ "([^"]+)"/x
+      include = $1
+      unless include.start_with?("ruby/") or include == "ruby.h" # skip public headers
+        includes << include
+      end
     end
   end
   includes
 rescue Errno::ENOENT
   # Ignore if the file is missing
-  puts "Warning: Could not open file #{file_path}"
+  abort "Warning: Could not open file #{file_path}.\nAdd it to KNOWN_MISSING after checking it does indeed not exist (e.g. generated)"
   []
 end
 
 # Recursively find and list all includes
-def find_includes(file_path, visited = Set.new, all_includes = Set.new)
+def find_includes(file_path, visited, all_includes)
   return if visited.include?(file_path)
 
   visited.add(file_path)
+  return if KNOWN_MISSING.include?(file_path)
+
   puts "Processing: #{file_path}"
 
   includes = extract_includes(file_path)
@@ -73,18 +85,17 @@ def find_includes(file_path, visited = Set.new, all_includes = Set.new)
     # Add to the global set of all included files
     all_includes.add(include)
 
-    # Assuming local includes (starting with `"`), recurse into them
-    next_file = File.join(File.dirname(file_path), include)
-    find_includes(next_file, visited, all_includes)
+    # includes are simply resolved from the top-level source directory
+    resolved_include = include
+    find_includes(resolved_include, visited, all_includes)
   end
 end
 
 # List all files in the current directory that are not being included
-def list_unincluded_files(all_includes, input_files, current_dir)
-  all_files = Dir.glob("#{current_dir}/*.h").map { |f| File.basename(f) }
+def list_unincluded_files(all_includes, input_files)
+  all_files = Dir.glob("**/*.*")
 
-  # Exclude input files from being listed as "not used"
-  unincluded_files = all_files.reject { |file| all_includes.include?(file) || input_files.include?(File.basename(file)) }
+  unincluded_files = all_files - input_files - all_includes.to_a
 
   puts "\nFiles not being included anywhere: #{unincluded_files.join(" ")}"
 end
@@ -98,13 +109,16 @@ end
 all_includes = Set.new
 visited = Set.new
 
-input_files = ARGV.map { |file| File.basename(file) }
+input_files = ARGV
 
 # Process each provided header file
-ARGV.each do |header_file|
-  find_includes(header_file, visited, all_includes)
+input_files.each do |header_file|
+  if File.exist?(header_file)
+    find_includes(header_file, visited, all_includes)
+  else
+    warn "WARNING: input file #{header_file} does not exist on this version"
+  end
 end
 
 # List files in the current directory that are not included, excluding input files
-current_dir = Dir.pwd
-list_unincluded_files(all_includes, input_files, current_dir)
+list_unincluded_files(all_includes, input_files)
