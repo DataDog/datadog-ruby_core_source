@@ -7,7 +7,7 @@
 #
 # To invoke it:
 #
-# $ bundle exec ruby find_includes.rb vm_core.h iseq.h ractor_core.h thread_pthread.h thread_none.h
+# $ bundle exec ruby find_includes.rb vm_core.h iseq.h internal/class.h ractor_core.h thread_pthread.h thread_none.h
 #
 # And we get a list of headers that are not needed by the datadog gem.
 # Always remember to validate the result (see below).
