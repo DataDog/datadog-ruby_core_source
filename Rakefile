@@ -20,6 +20,9 @@ def get_dest_dir(ruby_dir, version, tempdir)
         nil
       end
     end#.find { |p| not p.nil?}
+
+    # The Ruby 3.4.0 release has RUBY_PATCHLEVEL -1 but that's a bug, correct it
+    patchlevel = '0' if version == '3.4.0'
     puts "extracted patchlevel '#{patchlevel}'"
   end
   if patchlevel
