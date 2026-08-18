@@ -13,33 +13,35 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # "Corruption" tests validate that missing a file really breaks compilation (and thus our tests are working)
-        # 2.5 and 3.3+ are used by `dd-trace-rb` for compilation.
-        # On Rubies that don't use the source, this validates that indeed they aren't using any of these files.
         include:
-          # We want to test all variants under lib/datadog/ruby_core_source,
+          # We want to test all variants shipped under lib/datadog/ruby_core_source,
           # and the last Ruby version the variant can be used with.
           # So we test all variant versions, all major.minor, and all variant versions with patch-1
-          - { ruby_version: '2.5.0', expected_exit_code: 1 } # has its own headers
-          - { ruby_version: '2.5.1', expected_exit_code: 1 } # has its own headers
-          - { ruby_version: '2.5.3', expected_exit_code: 1 } # last version using 2.5.3 headers
-          - { ruby_version: '2.5.4', expected_exit_code: 1 } # has its own headers
-          - { ruby_version: '2.5',   expected_exit_code: 1 } # last version using 2.5.4 headers
-          - { ruby_version: '2.6',   expected_exit_code: 0 } # using MJIT headers
-          - { ruby_version: '2.7',   expected_exit_code: 0 } # using MJIT headers
-          - { ruby_version: '3.0',   expected_exit_code: 0 } # using MJIT headers
-          - { ruby_version: '3.1',   expected_exit_code: 0 } # using MJIT headers
-          - { ruby_version: '3.2',   expected_exit_code: 0 } # using MJIT headers
-          - { ruby_version: '3.3.0', expected_exit_code: 1 } # has its own headers
-          - { ruby_version: '3.3.4', expected_exit_code: 1 } # last version using 3.3.0 headers
-          - { ruby_version: '3.3.5', expected_exit_code: 1 } # has its own headers
-          - { ruby_version: '3.3',   expected_exit_code: 1 } # last version using 3.3.5 headers
-          - { ruby_version: '3.4.0', expected_exit_code: 1 } # has its own headers
-          - { ruby_version: '3.4',   expected_exit_code: 1 } # last version using 3.4.0 headers
-          - { ruby_version: '4.0.0', expected_exit_code: 1 } # has its own headers
-          - { ruby_version: '4.0.5', expected_exit_code: 1 } # last version using 4.0.0 headers
-          - { ruby_version: '4.0.6', expected_exit_code: 1 } # has its own headers
-          - { ruby_version: '4.0',   expected_exit_code: 1 } # last version using 4.0.6 headers
+          - { ruby_version: '2.5.0' } # Uses own headers
+          - { ruby_version: '2.5.1' } # Uses own headers
+          - { ruby_version: '2.5.3' } # Last version using 2.5.1 headers
+          - { ruby_version: '2.5.4' } # Uses own headers
+          - { ruby_version: '2.5'   } # Last version using 2.5.4 headers
+          - { ruby_version: '2.6.0' } # Uses own headers
+          - { ruby_version: '2.6'   } # Last version using 2.6.0 headers
+          - { ruby_version: '2.7.0' } # Uses own headers
+          - { ruby_version: '2.7'   } # Last version using 2.7.0 headers
+          - { ruby_version: '3.0.0' } # Uses own headers
+          - { ruby_version: '3.0'   } # Last version using 3.0.0 headers
+          - { ruby_version: '3.1.0' } # Uses own headers
+          - { ruby_version: '3.1'   } # Last version using 3.1.0 headers
+          - { ruby_version: '3.2.0' } # Uses own headers
+          - { ruby_version: '3.2'   } # Last version using 3.2.0 headers
+          - { ruby_version: '3.3.0' } # Uses own headers
+          - { ruby_version: '3.3.4' } # Last version using 3.3.0 headers
+          - { ruby_version: '3.3.5' } # Uses own headers
+          - { ruby_version: '3.3'   } # Last version using 3.3.5 headers
+          - { ruby_version: '3.4.0' } # Uses own headers
+          - { ruby_version: '3.4'   } # Last version using 3.4.0 headers
+          - { ruby_version: '4.0.0' } # Uses own headers
+          - { ruby_version: '4.0.5' } # Last version using 4.0.0 headers
+          - { ruby_version: '4.0.6' } # Uses own headers
+          - { ruby_version: '4.0'   } # Last version using 4.0.6 headers
 
     steps:
       - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
@@ -66,33 +68,17 @@ jobs:
       - run: bundle exec rake clean
         working-directory: ./dd-trace-rb
 
+      # "Corruption" tests validate that missing a file really breaks compilation (and thus our tests are working)
       - name: Corrupt the sources
         run: rm -v  lib/datadog/ruby_core_source/*/iseq.h
         working-directory: ./datadog-ruby_core_source
 
-      - name: Compile and validate exit code depending on using headers
+      - name: Compile and validate it fails
         working-directory: ./dd-trace-rb
         run: |
-          set +e  # Disable immediate exit on error
-          bundle exec rake compile
-          actual_exit_code=$?
-          set -e  # Re-enable exit on error
-
-          echo "Actual exit code: $actual_exit_code"
-          echo "Expected exit code: ${{ matrix.expected_exit_code }}"
-
-          if [ ${{ matrix.expected_exit_code }} -eq 0 ]; then
-            if [ $actual_exit_code -eq 0 ]; then
-              echo "✅ Got expected success"
-            else
-              echo "❌ Expected success but got failure (exit code $actual_exit_code)"
-              exit 1
-            fi
+          if bundle exec rake compile; then
+            echo "❌ Expected failure but got success (exit code 0)"
+            exit 1
           else
-            if [ $actual_exit_code -gt 0 ]; then
-              echo "✅ Got expected failure with exit code $actual_exit_code"
-            else
-              echo "❌ Expected failure but got success (exit code 0)"
-              exit 1
-            fi
+            echo "✅ Got expected failure"
           fi
