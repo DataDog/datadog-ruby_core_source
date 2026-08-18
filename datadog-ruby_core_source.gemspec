@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
     .reject { |fn| fn.include?('.github/') }
     .reject { |fn| fn.include?('.gitignore') }
     .reject { |fn| fn.include?('spec/') }
-  s.add_development_dependency "archive-tar-minitar", ">= 0.5.2"
+  s.add_development_dependency "archive-tar-minitar", ">= 0.12"
   s.add_development_dependency 'rake', '>= 0.9.2'
   s.add_development_dependency 'minitar-cli'
 end
