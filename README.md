@@ -4,8 +4,6 @@
 
 This gem is a fork of [debase-ruby\_core\_source](https://github.com/ruby-debug/debase-ruby_core_source/) for [dd-trace-rb](https://github.com/DataDog/dd-trace-rb).
 
-Only Ruby 2.5 and 3.3+ Rubies are included [see here for more information on why](https://github.com/DataDog/dd-trace-rb/blob/master/ext/datadog_profiling_native_extension/NativeExtensionDesign.md#usage-of-private-vm-headers).
-
 ## Usage
 
 Example use in extconf.rb:
