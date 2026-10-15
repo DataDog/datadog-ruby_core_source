@@ -209,6 +209,35 @@ task :trim, [:version] do |_task, args|
   version = args[:version] || ENV['VERSION'] or abort "Need a $VERSION"
   dest_dir = find_dest_dir(version)
 
+  # iseq.h includes prism_compile.h, but the headers we keep only use the prism types as pointers,
+  # and prism_compile.h is the only reason the prism/ headers (about half of the shipped bytes) are
+  # kept. So empty it to make the gem smaller, which matters for SSI.
+  # The file itself is kept, so that `#include "prism_compile.h"` in iseq.h still resolves, and it
+  # declares the prism types used by iseq.h as opaque types.
+  # The prism/ headers are then no longer included by anything and are removed below.
+  prism_compile_h = "#{dest_dir}/prism_compile.h"
+  if File.exist?(prism_compile_h)
+    puts "Emptying prism_compile.h so that the prism/ headers are not needed"
+    contents = +<<~HEADER
+      /* The contents of this header were removed by the datadog-ruby_core_source gem:
+       * they are not needed by the headers used in dd-trace-rb, and keeping them would mean
+       * also shipping all the prism/ headers, which this gem does not ship.
+       * This file is kept because iseq.h includes it. */
+    HEADER
+    # Only Ruby 3.3's iseq.h still uses prism types, for
+    #   rb_iseq_t * rb_iseq_new_main_prism(pm_string_t *input, pm_options_t *options, VALUE path);
+    if version.start_with?('3.3.')
+      contents << <<~HEADER
+
+        /* These types are used by iseq.h on Ruby 3.3, they are declared as opaque types
+         * since they are only used as pointers. */
+        typedef struct pm_string pm_string_t;
+        typedef struct pm_options pm_options_t;
+      HEADER
+    end
+    File.write(prism_compile_h, contents)
+  end
+
   unincluded_files = Dir.chdir(dest_dir) do
     FindIncludes.unincluded_files(FindIncludes::ENTRY_HEADERS, verbose: ENV['VERBOSE'] == 'true')
   end
