@@ -24,7 +24,17 @@ To add another ruby version's source to this gem's directory:
 
 _Adding released versions_. `add_source` can use a pre-downloaded .tgz file. Use TGZ_FILE_NAME to pass it. Note that the PATCHLEVEL variable is optional because `add_source` can extract the patch level from version.h of the downloaded sources.
 
-Then, run the `find_includes.rb` to minimize the shipped files. See comments on that file for how to use it, and/or reference previous PRs.
+Then, run the `trim` task to minimize the shipped files:
+
+    $ rake trim[2.1.3]
+
+See the comments above the `FindIncludes` module in the `Rakefile` for how it works, and/or reference previous PRs.
+
+To re-download and trim the headers of every ruby version already under `lib/datadog/ruby_core_source`, i.e. run `add_source` + `trim` for each of them:
+
+    $ rake redownload_all_sources
+
+There should be no diff unless the headers used by dd-trace-rb changed or a release was re-rolled upstream.
 
 ## Credits
 
