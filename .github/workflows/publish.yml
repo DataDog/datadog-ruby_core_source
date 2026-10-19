@@ -1,6 +1,12 @@
 name: Publish Gem
 
-on: workflow_dispatch
+# Creating a GitHub release (vX.Y.Z tag) is the only manual step. This
+# workflow runs on the tag: tests, gem push to rubygems.org, and the notify
+# job that tells dd-trace-rb to pin the new version.
+
+on:
+  release:
+    types: [published]
 
 jobs:
   test:

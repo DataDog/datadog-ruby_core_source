@@ -39,10 +39,7 @@ There should be no diff unless the headers used by dd-trace-rb changed or a rele
 ## Releasing
 
 1. Update the version in `lib/datadog/ruby_core_source/version.rb` and merge.
-2. Create a GitHub release with a `vX.Y.Z` tag.
-3. Run the "Publish Gem" workflow on `master`: <https://github.com/DataDog/datadog-ruby_core_source/actions/workflows/publish.yml>
-
-The publish run notifies dd-trace-rb, which opens a PR pinning the new version.
+2. Create a GitHub release with a `vX.Y.Z` tag. That triggers the "Publish Gem" workflow, which runs the compilation tests and publishes the gem to rubygems.org. Its notify job then tells dd-trace-rb to pin the new version.
 
 ## Credits
 
