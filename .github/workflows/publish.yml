@@ -21,3 +21,42 @@ jobs:
           bundler-cache: true
           ruby-version: '3.2.4'
       - uses: rubygems/release-gem@e9a6361a0b14562539327c2a02373edc56dd3169 # v1.1.4
+
+  notify-consumers:
+    name: Notify consumers
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - name: Read gem version
+        id: gem
+        run: |
+          version=$(sed -n "s/.*VERSION = '\(.*\)'.*/\1/p" lib/datadog/ruby_core_source/version.rb)
+          if [ -z "$version" ]; then
+            echo "::error::Could not read version from lib/datadog/ruby_core_source/version.rb"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Get GitHub Token via dd-octo-sts
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@c85802a58e202b7e764b5441e4378c76043c8108 # v1.0.5
+        with:
+          scope: DataDog/dd-trace-rb
+          policy: datadog-ruby_core_source.notify-consumers
+      - name: Wait for token propagation
+        run: sleep 30
+      - name: Dispatch to DataDog/dd-trace-rb
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          gh api "repos/DataDog/dd-trace-rb/dispatches" \
+            -f event_type=internal-dep-updated \
+            -f "client_payload[gem]=datadog-ruby_core_source" \
+            -f "client_payload[version]=${{ steps.gem.outputs.version }}" \
+            -f "client_payload[commit]=${{ github.sha }}" \
+            -f "client_payload[triggered_by]=${{ github.repository }}" \
+            -f "client_payload[source_run_url]=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
