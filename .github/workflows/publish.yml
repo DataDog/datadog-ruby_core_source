@@ -4,7 +4,7 @@ name: Publish Gem
 # workflow runs on the tag: tests, gem push to rubygems.org, and the notify
 # job that tells dd-trace-rb to pin the new version.
 
-on:
+on: # yamllint disable-line rule:truthy
   release:
     types: [published]
 
