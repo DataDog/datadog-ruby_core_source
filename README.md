@@ -36,6 +36,14 @@ To re-download and trim the headers of every ruby version already under `lib/dat
 
 There should be no diff unless the headers used by dd-trace-rb changed or a release was re-rolled upstream.
 
+## Releasing
+
+1. Update the version in `lib/datadog/ruby_core_source/version.rb` and merge.
+2. Create a GitHub release with a `vX.Y.Z` tag.
+3. Run the "Publish Gem" workflow on `master`: <https://github.com/DataDog/datadog-ruby_core_source/actions/workflows/publish.yml>
+
+The publish run notifies dd-trace-rb, which opens a PR pinning the new version.
+
 ## Credits
 
 The following credits are in the upstream `debase-ruby_core_source` README:
